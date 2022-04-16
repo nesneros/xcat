@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/nesneros/xcat/gen/version"
 	core "github.com/nesneros/xcat/xcatcore"
 )
 
@@ -16,6 +17,7 @@ func main() {
 	flag.BoolVar(&showKindFlag, "kind", false, "Print the detected kind")
 	flag.Usage = func() {
 		out := flag.CommandLine.Output()
+		fmt.Fprintf(out, "Version: %v", version.Version)
 		fmt.Fprintf(out, "Usage of %s:\n", os.Args[0])
 		flag.PrintDefaults()
 		fmt.Fprintf(out, "\nPossible values for kind: %s\n", strings.Join(core.Kinds[:], ", "))
