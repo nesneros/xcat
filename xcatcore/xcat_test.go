@@ -6,6 +6,7 @@ import (
 	"compress/gzip"
 	_ "embed"
 	"io"
+	"math/rand"
 	"strings"
 	"testing"
 
@@ -28,6 +29,37 @@ func gzipToBytes(s string) []byte {
 
 func gzipReader(s string) io.Reader {
 	return bytes.NewReader(gzipToBytes(s))
+}
+
+func writeRandom(w io.Writer, n int) (checksum int) {
+	var next byte
+	for i := 0; i < n; i++ {
+		if rand.Intn(1000) == 0 {
+			next = byte(rand.Int())
+		}
+		checksum += int(next)
+		b := []byte{next}
+		w.Write(b)
+	}
+	return
+}
+func TestRandom(t *testing.T) {
+	assert := assert.New(t)
+	var b bytes.Buffer
+	w1 := bufio.NewWriter(&b)
+	w2 := gzip.NewWriter(w1)
+	wChecksum := writeRandom(w2, 100000)
+	w2.Close()
+	w1.Flush()
+	cb := b.Bytes()
+	xcat := NewReader(bytes.NewReader(cb), 200)
+	buf, err := io.ReadAll(xcat)
+	assert.NoError(err)
+	rChecksum := 0
+	for _, e := range buf {
+		rChecksum += int(e)
+	}
+	assert.Equal(wChecksum, rChecksum)
 }
 
 func TestDetectGzip(t *testing.T) {
@@ -66,12 +98,18 @@ func TestPlain(t *testing.T) {
 }
 
 func TestGzip(t *testing.T) {
+	testGzip(t, "abc")
+	testGzip(t, "\n")
+	testGzip(t, "")
+}
+
+func testGzip(t *testing.T, s string) {
 	assert := assert.New(t)
-	rd := gzipReader("abc")
+	rd := gzipReader(s)
 	xcatRd := NewReader(rd, 100)
 	out, e := io.ReadAll(xcatRd)
 	assert.NoError(e)
-	assert.Equal("abc", string(out))
+	assert.Equal(s, string(out))
 }
 
 func TestBzip2(t *testing.T) {
