@@ -11,10 +11,8 @@ import (
 )
 
 const (
-	defaultBufSize = 1024
-
-	// experiments has shown that compressing empty input with gzip then the output is 23
-	minSizeForDetection = 22
+	defaultBufSize      = 1024
+	minSizeForDetection = 18
 )
 
 type kind int8
