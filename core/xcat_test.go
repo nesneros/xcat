@@ -35,15 +35,15 @@ func TestDetectGzip(t *testing.T) {
 	bb := gzipToBytes("Hello world")
 	// cut one byte away
 	kind := detectKind(bb[:len(bb)-1])
-	assert.Equal(kind_gzip, kind)
+	assert.Equal(kindGzip, kind)
 	// change a byte (i.e. no valid gzip header)
 	bb[len(bb)-1]++
 	kind = detectKind(bb)
-	assert.Equal(kind_plain, kind)
+	assert.Equal(kindPlain, kind)
 	// change a byte (i.e. no valid gzip header)
 	bb[len(bb)-2]--
 	kind = detectKind(bb)
-	assert.Equal(kind_plain, kind)
+	assert.Equal(kindPlain, kind)
 }
 
 //go:embed helloworld.bz
@@ -53,7 +53,7 @@ func TestDetectBzip2(t *testing.T) {
 	assert := assert.New(t)
 	b := []byte(bzHelloWorld)
 	kind := detectKind(b)
-	assert.Equal(kind_bzip2, kind)
+	assert.Equal(kindBzip2, kind)
 }
 
 func TestPlain(t *testing.T) {

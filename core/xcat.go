@@ -1,6 +1,6 @@
 package core
 
-//go:generate stringer -type=kind -trimprefix=kind_ -output=enums_stringer.go
+//go:generate stringer -type=kind -trimprefix=kind -output=enums_stringer.go
 
 import (
 	"bytes"
@@ -18,11 +18,12 @@ type kind int8
 const minSizeForDetection = 22
 
 const (
-	kind_error kind = iota
-	kind_plain
-	kind_gzip
-	kind_bzip2
+	kindPlain kind = iota
+	kindGzip
+	kindBzip2
 )
+
+var Kinds = [...]string{kindPlain.String(), kindGzip.String(), kindBzip2.String()}
 
 type XcatReader struct {
 	buf    []byte
@@ -54,14 +55,19 @@ func NewReader(in io.Reader, bufSize int) *XcatReader {
 	return &result
 }
 
+func (x *XcatReader) Kind() kind {
+	return x.kind
+}
+
 func (x *XcatReader) init(kind kind) {
+	x.kind = kind
 	allIn := io.MultiReader(bytes.NewReader(x.buf), x.in)
 	switch kind {
-	case kind_plain:
+	case kindPlain:
 		x.output = allIn
-	case kind_gzip:
+	case kindGzip:
 		x.output, x.error = gzip.NewReader(allIn)
-	case kind_bzip2:
+	case kindBzip2:
 		x.output = bzip2.NewReader(allIn)
 	default:
 		panic(fmt.Sprintf("Invalid kind: %v", kind))
@@ -78,20 +84,20 @@ func (x *XcatReader) Read(p []byte) (n int, err error) {
 func detectKind(buf []byte) kind {
 	size := len(buf)
 	if size < minSizeForDetection {
-		return kind_plain
+		return kindPlain
 	}
 	c0, c1 := buf[0], buf[1]
 	switch {
 	case c0 == 0x1f && c1 == 0x8b:
 		err := uncompressGzip(buf)
 		if err != nil {
-			return kind_plain
+			return kindPlain
 		}
-		return kind_gzip
+		return kindGzip
 	case c0 == 'B' && c1 == 'Z' && bytes.Equal(pi[:], buf[4:10]):
-		return kind_bzip2
+		return kindBzip2
 	default:
-		return kind_plain
+		return kindPlain
 	}
 }
 
