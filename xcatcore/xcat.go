@@ -1,4 +1,4 @@
-package core
+package xcatcore
 
 //go:generate stringer -type=kind -trimprefix=kind -output=enums_stringer.go
 
@@ -23,7 +23,12 @@ const (
 	kindBzip2
 )
 
-var Kinds = [...]string{kindPlain.String(), kindGzip.String(), kindBzip2.String()}
+func (k kind) str() string {
+	// this works regardless if stringer has been generated or not
+	return fmt.Sprintf("%v", k)
+}
+
+var Kinds = [...]string{kindPlain.str(), kindGzip.str(), kindBzip2.str()}
 
 type XcatReader struct {
 	buf    []byte
