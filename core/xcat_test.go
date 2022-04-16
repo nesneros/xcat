@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"compress/gzip"
+	_ "embed"
 	"io"
 	"strings"
 	"testing"
@@ -33,19 +34,26 @@ func TestDetectGzip(t *testing.T) {
 	assert := assert.New(t)
 	bb := gzipToBytes("Hello world")
 	// cut one byte away
-	kind, uncompressed := detectKind(bb[:len(bb)-1])
+	kind := detectKind(bb[:len(bb)-1])
 	assert.Equal(kind_gzip, kind)
-	assert.Nil(uncompressed)
 	// change a byte (i.e. no valid gzip header)
 	bb[len(bb)-1]++
-	kind, uncompressed = detectKind(bb)
+	kind = detectKind(bb)
 	assert.Equal(kind_plain, kind)
-	assert.Nil(uncompressed)
 	// change a byte (i.e. no valid gzip header)
 	bb[len(bb)-2]--
-	kind, uncompressed = detectKind(bb)
+	kind = detectKind(bb)
 	assert.Equal(kind_plain, kind)
-	assert.Nil(uncompressed)
+}
+
+//go:embed helloworld.bz
+var bzHelloWorld string
+
+func TestDetectBzip2(t *testing.T) {
+	assert := assert.New(t)
+	b := []byte(bzHelloWorld)
+	kind := detectKind(b)
+	assert.Equal(kind_bzip2, kind)
 }
 
 func TestPlain(t *testing.T) {
@@ -64,4 +72,13 @@ func TestGzip(t *testing.T) {
 	out, e := io.ReadAll(xcatRd)
 	assert.NoError(e)
 	assert.Equal("abc", string(out))
+}
+
+func TestBzip2(t *testing.T) {
+	assert := assert.New(t)
+	rd := strings.NewReader(bzHelloWorld)
+	xcatRd := NewReader(rd, 100)
+	out, e := io.ReadAll(xcatRd)
+	assert.NoError(e)
+	assert.Equal("Hello World\n", string(out))
 }

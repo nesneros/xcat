@@ -1,10 +1,12 @@
 package core
 
-// disabled go:generate stringer -type=kind -trimprefix=kind_ -output=enums_stringer.go
+//go:generate stringer -type=kind -trimprefix=kind_ -output=enums_stringer.go
 
 import (
 	"bytes"
+	"compress/bzip2"
 	"compress/gzip"
+	"fmt"
 	"io"
 )
 
@@ -19,10 +21,12 @@ const (
 	kind_error kind = iota
 	kind_plain
 	kind_gzip
+	kind_bzip2
 )
 
 type XcatReader struct {
-	input  readerWithBuf
+	buf    []byte
+	in     io.Reader
 	output io.Reader
 	kind   kind
 	error  error
@@ -42,22 +46,25 @@ func NewReader(in io.Reader, bufSize int) *XcatReader {
 		err = nil
 		buf = buf[:n]
 	}
-	result := XcatReader{error: err}
+	result := XcatReader{in: in, buf: buf, error: err}
 	if err == nil {
-		k, _ = detectKind(buf)
-		result.init(in, buf, k)
+		k = detectKind(buf)
+		result.init(k)
 	}
 	return &result
 }
 
-func (x *XcatReader) init(in io.Reader, buf []byte, kind kind) {
-	x.input.reader = in
-	x.input.buf = buf
+func (x *XcatReader) init(kind kind) {
+	allIn := io.MultiReader(bytes.NewReader(x.buf), x.in)
 	switch kind {
 	case kind_plain:
-		x.output = &x.input
+		x.output = allIn
 	case kind_gzip:
-		x.output, x.error = gzip.NewReader(&x.input)
+		x.output, x.error = gzip.NewReader(allIn)
+	case kind_bzip2:
+		x.output = bzip2.NewReader(allIn)
+	default:
+		panic(fmt.Sprintf("Invalid kind: %v", kind))
 	}
 }
 
@@ -68,25 +75,29 @@ func (x *XcatReader) Read(p []byte) (n int, err error) {
 	return x.output.Read(p)
 }
 
-func detectKind(buf []byte) (kind kind, uncompressed []byte) {
+func detectKind(buf []byte) kind {
 	size := len(buf)
 	if size < minSizeForDetection {
-		return kind_plain, nil
+		return kind_plain
 	}
 	c0, c1 := buf[0], buf[1]
 	switch {
 	case c0 == 0x1f && c1 == 0x8b:
-		uncompressed, err := uncompressGzip(buf)
+		err := uncompressGzip(buf)
 		if err != nil {
-			return kind_plain, nil
+			return kind_plain
 		}
-		return kind_gzip, uncompressed
+		return kind_gzip
+	case c0 == 'B' && c1 == 'Z' && bytes.Equal(pi[:], buf[4:10]):
+		return kind_bzip2
 	default:
-		return kind_plain, nil
+		return kind_plain
 	}
 }
 
-func uncompressGzip(in []byte) (out []byte, err1 error) {
+var pi = [...]byte{0x31, 0x41, 0x59, 0x26, 0x53, 0x59}
+
+func uncompressGzip(in []byte) error {
 	inRd := bytes.NewReader(in)
 	var tmp any = inRd
 	_, ok := tmp.(io.ByteReader)
@@ -95,15 +106,15 @@ func uncompressGzip(in []byte) (out []byte, err1 error) {
 	}
 	rd, err1 := gzip.NewReader(inRd)
 	if err1 != nil {
-		return nil, err1
+		return err1
 	}
-	uncompressed, err2 := io.ReadAll(rd)
+	_, err2 := io.Copy(io.Discard, rd)
 	switch err2 {
 	case io.ErrUnexpectedEOF:
-		return nil, nil
+		return nil
 	case nil:
-		return uncompressed, nil
+		return nil
 	default:
-		return nil, err2
+		return err2
 	}
 }
