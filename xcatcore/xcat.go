@@ -10,12 +10,14 @@ import (
 	"io"
 )
 
-const defaultBufSize = 1024
+const (
+	defaultBufSize = 1024
+
+	// experiments has shown that compressing empty input with gzip then the output is 23
+	minSizeForDetection = 22
+)
 
 type kind int8
-
-// experiments has shown that compressing empty input with gzip then the output is 23
-const minSizeForDetection = 22
 
 const (
 	kindPlain kind = iota
@@ -23,12 +25,15 @@ const (
 	kindBzip2
 )
 
-func (k kind) str() string {
-	// this works regardless if stringer has been generated or not
-	return fmt.Sprintf("%v", k)
-}
+// All possible values for kind
+var Kinds [kindBzip2 + 1]string
 
-var Kinds = [...]string{kindPlain.str(), kindGzip.str(), kindBzip2.str()}
+func init() {
+	for i := range Kinds {
+		// this works regardless if stringer has been generated or not
+		Kinds[i] = fmt.Sprintf("%v", kind(i))
+	}
+}
 
 type XcatReader struct {
 	buf    []byte
