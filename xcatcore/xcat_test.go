@@ -13,10 +13,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func plainReader(s string) io.Reader {
-	return strings.NewReader(s)
-}
-
 func gzipToBytes(s string) []byte {
 	var b bytes.Buffer
 	w1 := bufio.NewWriter(&b)
@@ -25,10 +21,6 @@ func gzipToBytes(s string) []byte {
 	w2.Close()
 	w1.Flush()
 	return b.Bytes()
-}
-
-func gzipReader(s string) io.Reader {
-	return bytes.NewReader(gzipToBytes(s))
 }
 
 func writeRandom(w io.Writer, n int) (checksum int) {
@@ -90,7 +82,7 @@ func TestDetectBzip2(t *testing.T) {
 
 func TestPlain(t *testing.T) {
 	assert := assert.New(t)
-	rd := plainReader("abc")
+	rd := strings.NewReader("abc")
 	xcatRd := NewReader(rd, 100)
 	out, e := io.ReadAll(xcatRd)
 	assert.NoError(e)
@@ -105,7 +97,7 @@ func TestGzip(t *testing.T) {
 
 func testGzip(t *testing.T, s string) {
 	assert := assert.New(t)
-	rd := gzipReader(s)
+	rd := bytes.NewReader(gzipToBytes(s))
 	xcatRd := NewReader(rd, 100)
 	out, e := io.ReadAll(xcatRd)
 	assert.NoError(e)

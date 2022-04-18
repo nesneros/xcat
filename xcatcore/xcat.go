@@ -97,7 +97,8 @@ func detectKind(buf []byte) kind {
 	c0, c1 := buf[0], buf[1]
 	switch {
 	case c0 == 0x1f && c1 == 0x8b:
-		err := uncompressGzip(buf)
+		// magic values are only two bytes. Decompressing a bit to make extra sure it is gzip
+		err := decompressGzip(buf)
 		if err != nil {
 			return kindPlain
 		}
@@ -111,22 +112,15 @@ func detectKind(buf []byte) kind {
 
 var pi = [...]byte{0x31, 0x41, 0x59, 0x26, 0x53, 0x59}
 
-func uncompressGzip(in []byte) error {
+func decompressGzip(in []byte) error {
 	inRd := bytes.NewReader(in)
-	var tmp any = inRd
-	_, ok := tmp.(io.ByteReader)
-	if !ok {
-		panic("internal error")
-	}
 	rd, err1 := gzip.NewReader(inRd)
 	if err1 != nil {
 		return err1
 	}
 	_, err2 := io.Copy(io.Discard, rd)
 	switch err2 {
-	case io.ErrUnexpectedEOF:
-		return nil
-	case nil:
+	case io.ErrUnexpectedEOF, nil:
 		return nil
 	default:
 		return err2
