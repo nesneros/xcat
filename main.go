@@ -11,7 +11,7 @@ import (
 	core "github.com/nesneros/xcat/xcatcore"
 )
 
-var Version = "v0.0.1"
+var Version = "v0.1.0"
 
 func main() {
 	var showKindFlag bool
