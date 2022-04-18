@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	_ "embed"
 	"flag"
 	"fmt"
 	"io"
@@ -11,7 +12,8 @@ import (
 	core "github.com/nesneros/xcat/xcatcore"
 )
 
-var Version = "v0.1.0"
+//go:embed .version
+var Version string
 
 func main() {
 	var showKindFlag bool
