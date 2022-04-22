@@ -114,15 +114,15 @@ var pi = [...]byte{0x31, 0x41, 0x59, 0x26, 0x53, 0x59}
 
 func decompressGzip(in []byte) error {
 	inRd := bytes.NewReader(in)
-	rd, err1 := gzip.NewReader(inRd)
-	if err1 != nil {
-		return err1
+	rd, err := gzip.NewReader(inRd)
+	if err != nil {
+		return err
 	}
-	_, err2 := io.Copy(io.Discard, rd)
-	switch err2 {
+	_, err = io.Copy(io.Discard, rd)
+	switch err {
 	case io.ErrUnexpectedEOF, nil:
 		return nil
 	default:
-		return err2
+		return err
 	}
 }
