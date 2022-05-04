@@ -11,7 +11,7 @@ import (
 	"github.com/nesneros/xcat/pkg/xcat"
 )
 
-var version string = "v0.1.4"
+var version string = "v0.2.1"
 
 func main() {
 	out := bufio.NewWriter(flag.CommandLine.Output())
@@ -49,5 +49,5 @@ func run(args []string, out io.Writer, in io.Reader) error {
 func usage(out io.Writer, flags *flag.FlagSet) {
 	fmt.Fprintf(out, "Version: %v, usage of %s:\n", version, os.Args[0])
 	flags.PrintDefaults()
-	fmt.Fprintf(out, "\nPossible values for kind: %s\n", strings.Join(core.Kinds[:], ", "))
+	fmt.Fprintf(out, "\nPossible values for kind: %s\n", strings.Join(xcat.Kinds[:], ", "))
 }
