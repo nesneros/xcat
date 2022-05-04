@@ -8,7 +8,7 @@ import (
 	"os"
 	"strings"
 
-	core "github.com/nesneros/xcat/xcatcore"
+	"github.com/nesneros/xcat/pkg/xcat"
 )
 
 var version string = "v0.1.4"
@@ -32,7 +32,7 @@ func run(args []string, out io.Writer, in io.Reader) error {
 
 	bufferedInput := bufio.NewReader(in)
 	size := bufferedInput.Size()
-	reader := core.NewReader(bufferedInput, size)
+	reader := xcat.NewReader(bufferedInput, size)
 	kind := reader.Kind()
 
 	if *showKind {

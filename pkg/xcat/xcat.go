@@ -1,4 +1,4 @@
-package xcatcore
+package xcat
 
 //go:generate stringer -type=kind -trimprefix=kind -output=enums_stringer.go
 

@@ -1,4 +1,4 @@
-package xcatcore
+package xcat
 
 import (
 	"bufio"
