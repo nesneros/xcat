@@ -31,18 +31,18 @@ func run(args []string, w io.Writer, in io.Reader) error {
 
 	bufferedInput := bufio.NewReader(in)
 	size := bufferedInput.Size()
-	reader := xcat.NewReader(bufferedInput, size)
+	reader, err := xcat.NewReader(bufferedInput, size)
+	if err != nil {
+		return err
+	}
 	kind := reader.Kind()
 
 	if *showKind {
 		fmt.Fprintf(out, "%v\n", kind)
 		return nil
 	}
-	_, err := io.Copy(out, reader)
-	if err != nil {
-		return err
-	}
-	return nil
+	_, err = io.Copy(out, reader)
+	return err
 }
 
 func usage(flags *flag.FlagSet) {

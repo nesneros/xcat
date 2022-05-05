@@ -33,15 +33,15 @@ func init() {
 	}
 }
 
-type XcatReader struct {
-	buf    []byte
-	in     io.Reader
-	output io.Reader
-	kind   kind
-	error  error
+type Reader struct {
+	buf      []byte
+	in       io.Reader
+	mappedRd io.Reader
+	kind     kind
 }
 
-func NewReader(in io.Reader, bufSize int) *XcatReader {
+// Create a new xcat.Reader. If bufSize <= 0 the default buffer size is used
+func NewReader(in io.Reader, bufSize int) (*Reader, error) {
 	if bufSize <= 0 {
 		bufSize = defaultBufSize
 	}
@@ -50,43 +50,38 @@ func NewReader(in io.Reader, bufSize int) *XcatReader {
 	}
 	buf := make([]byte, bufSize)
 	n, err := io.ReadFull(in, buf)
-	var k kind
 	if err == io.ErrUnexpectedEOF {
 		err = nil
 		buf = buf[:n]
 	}
-	result := XcatReader{in: in, buf: buf, error: err}
-	if err == nil {
-		k = detectKind(buf)
-		result.init(k)
+	if err != nil {
+		return nil, err
 	}
-	return &result
+	kind := detectKind(buf)
+	allIn := io.MultiReader(bytes.NewReader(buf), in)
+	var output io.Reader
+	switch kind {
+	case kindPlain:
+		output = allIn
+	case kindGzip:
+		output, err = gzip.NewReader(allIn)
+	case kindBzip2:
+		output = bzip2.NewReader(allIn)
+	default:
+		panic(fmt.Sprintf("INTERNAL ERROR: Invalid kind: %v", kind))
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &Reader{in: in, buf: buf, mappedRd: output, kind: kind}, nil
 }
 
-func (x *XcatReader) Kind() kind {
+func (x *Reader) Kind() kind {
 	return x.kind
 }
 
-func (x *XcatReader) init(kind kind) {
-	x.kind = kind
-	allIn := io.MultiReader(bytes.NewReader(x.buf), x.in)
-	switch kind {
-	case kindPlain:
-		x.output = allIn
-	case kindGzip:
-		x.output, x.error = gzip.NewReader(allIn)
-	case kindBzip2:
-		x.output = bzip2.NewReader(allIn)
-	default:
-		panic(fmt.Sprintf("Invalid kind: %v", kind))
-	}
-}
-
-func (x *XcatReader) Read(p []byte) (n int, err error) {
-	if x.error != nil {
-		return 0, x.error
-	}
-	return x.output.Read(p)
+func (x *Reader) Read(p []byte) (n int, err error) {
+	return x.mappedRd.Read(p)
 }
 
 func detectKind(buf []byte) kind {

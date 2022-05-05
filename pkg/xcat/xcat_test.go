@@ -44,7 +44,7 @@ func TestRandom(t *testing.T) {
 	w2.Close()
 	w1.Flush()
 	cb := b.Bytes()
-	xcat := NewReader(bytes.NewReader(cb), 200)
+	xcat, _ := NewReader(bytes.NewReader(cb), 200)
 	buf, err := io.ReadAll(xcat)
 	assert.NoError(err)
 	rChecksum := 0
@@ -83,7 +83,7 @@ func TestDetectBzip2(t *testing.T) {
 func TestPlain(t *testing.T) {
 	assert := assert.New(t)
 	rd := strings.NewReader("abc")
-	xcatRd := NewReader(rd, 100)
+	xcatRd, _ := NewReader(rd, 100)
 	out, e := io.ReadAll(xcatRd)
 	assert.NoError(e)
 	assert.Equal("abc", string(out))
@@ -98,7 +98,7 @@ func TestGzip(t *testing.T) {
 func testGzip(t *testing.T, s string) {
 	assert := assert.New(t)
 	rd := bytes.NewReader(gzipToBytes(s))
-	xcatRd := NewReader(rd, 100)
+	xcatRd, _ := NewReader(rd, 100)
 	out, e := io.ReadAll(xcatRd)
 	assert.NoError(e)
 	assert.Equal(s, string(out))
@@ -107,7 +107,7 @@ func testGzip(t *testing.T, s string) {
 func TestBzip2(t *testing.T) {
 	assert := assert.New(t)
 	rd := strings.NewReader(bzHelloWorld)
-	xcatRd := NewReader(rd, 100)
+	xcatRd, _ := NewReader(rd, 100)
 	out, e := io.ReadAll(xcatRd)
 	assert.NoError(e)
 	assert.Equal("Hello World\n", string(out))
