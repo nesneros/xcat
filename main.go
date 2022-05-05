@@ -5,19 +5,32 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"log"
+	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"strings"
 
 	"github.com/nesneros/xcat/pkg/xcat"
 )
 
-var version string = "v0.2.1"
+// nolint: gochecknoglobals
+var (
+	version        string
+	commit         string
+	buildTimestamp string
+)
 
 func main() {
+	go func() {
+		log.Println(http.ListenAndServe("localhost:6060", nil))
+	}()
+
 	if err := run(os.Args, flag.CommandLine.Output(), os.Stdin); err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err)
 		os.Exit(3)
 	}
+	select {}
 }
 
 func run(args []string, w io.Writer, in io.Reader) error {
@@ -46,7 +59,15 @@ func run(args []string, w io.Writer, in io.Reader) error {
 }
 
 func usage(flags *flag.FlagSet) {
-	fmt.Fprintf(flags.Output(), "Version: %v, usage of %s:\n", version, os.Args[0])
+	printVersionInfo(flags.Output())
+	fmt.Fprintf(flags.Output(), "Usage of %s:\n", os.Args[0])
 	flags.PrintDefaults()
 	fmt.Fprintf(flags.Output(), "\nPossible values for kind: %s\n", strings.Join(xcat.Kinds[:], ", "))
+}
+
+func printVersionInfo(out io.Writer) {
+	if version == "" {
+		return
+	}
+	fmt.Fprintf(out, "Version: %s, commit: %s, build timestamp: %s\n", version, commit, buildTimestamp)
 }
