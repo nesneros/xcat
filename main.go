@@ -59,15 +59,15 @@ func run(args []string, w io.Writer, in io.Reader) error {
 }
 
 func usage(flags *flag.FlagSet) {
-	printVersionInfo(flags.Output())
 	fmt.Fprintf(flags.Output(), "Usage of %s:\n", os.Args[0])
 	flags.PrintDefaults()
 	fmt.Fprintf(flags.Output(), "\nPossible values for kind: %s\n", strings.Join(xcat.Kinds[:], ", "))
+	printVersionInfo(flags.Output())
 }
 
 func printVersionInfo(out io.Writer) {
 	if version == "" {
 		return
 	}
-	fmt.Fprintf(out, "Version: %s, commit: %s, build timestamp: %s\n", version, commit, buildTimestamp)
+	fmt.Fprintf(out, "\nVersion: %s, commit: %s, build timestamp: %s\n", version, commit, buildTimestamp)
 }
