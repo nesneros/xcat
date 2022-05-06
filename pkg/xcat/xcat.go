@@ -76,6 +76,7 @@ func NewReader(in io.Reader, bufSize int) (*Reader, error) {
 	return &Reader{in: in, buf: buf, mappedRd: output, kind: kind}, nil
 }
 
+// Return the detected Kind for the wrapped io.Reader
 func (x *Reader) Kind() kind {
 	return x.kind
 }
