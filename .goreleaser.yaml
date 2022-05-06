@@ -8,14 +8,16 @@ builds:
     goos:
       - linux
       - darwin
+      - windows
     ldflags:
       - -s -w -X main.version={{.Summary}} -X main.commit={{.ShortCommit}} -X main.buildTimestamp={{ .Date }}
 archives:
   - replacements:
-      darwin: Darwin
-      linux: Linux
       386: i386
       amd64: x86_64
+    format_overrides:
+      - goos: windows
+        format: zip      
 checksum:
   name_template: 'checksums.txt'
 snapshot:
