@@ -3,11 +3,12 @@ package main
 import (
 	"bufio"
 	_ "embed"
-	"flag"
 	"fmt"
 	"io"
 	"os"
 	"strings"
+
+	flag "github.com/spf13/pflag"
 
 	"github.com/nesneros/xcat/pkg/xcat"
 )
@@ -23,7 +24,7 @@ var (
 var license string
 
 func main() {
-	if err := run(os.Args, flag.CommandLine.Output(), os.Stdin); err != nil {
+	if err := run(os.Args, os.Stdout, os.Stdin); err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err)
 		os.Exit(3)
 	}
@@ -33,13 +34,18 @@ func run(args []string, w io.Writer, in io.Reader) error {
 	out := bufio.NewWriter(w)
 	defer out.Flush()
 	flags := flag.NewFlagSet(args[0], flag.ExitOnError)
-	flags.Usage = func() { usage(flags) }
-	showKind := flags.Bool("kind", false, "Print the detected kind")
-	showLicense := flags.Bool("license", false, "Show license")
+	flags.Usage = func() { usage(flags, os.Stderr) }
+	showKind := flags.BoolP("kind", "k", false, "Print the detected kind")
+	showLicense := flags.BoolP("license", "L", false, "Show license and exit without reading stdin")
+	showHelp := flags.BoolP("help", "h", false, "Show help and exit without reading stdin")
 	flags.Parse(args[1:])
 
-	if *showLicense {
+	switch {
+	case *showLicense:
 		fmt.Fprintf(out, "%s\n", license)
+		return nil
+	case *showHelp:
+		usage(flags, os.Stdout)
 		return nil
 	}
 
@@ -59,16 +65,16 @@ func run(args []string, w io.Writer, in io.Reader) error {
 	return err
 }
 
-func usage(flags *flag.FlagSet) {
-	fmt.Fprintf(flags.Output(), "Usage of %s:\n", os.Args[0])
+func usage(flags *flag.FlagSet, w io.Writer) {
+	fmt.Fprintf(w, "usage: %s [options]\n\n", os.Args[0])
 	flags.PrintDefaults()
-	fmt.Fprintf(flags.Output(), "\nPossible values for kind: %s\n", strings.Join(xcat.Kinds[:], ", "))
-	printVersionInfo(flags.Output())
+	fmt.Fprintf(w, "\nPossible values for kind: %s\n", strings.Join(xcat.Kinds[:], ", "))
+	printVersionInfo(w)
 }
 
-func printVersionInfo(out io.Writer) {
+func printVersionInfo(w io.Writer) {
 	if version == "" {
 		return
 	}
-	fmt.Fprintf(out, "\nVersion: %s, commit: %s, build timestamp: %s\n", version, commit, buildTimestamp)
+	fmt.Fprintf(w, "\nVersion: %s, commit: %s, build timestamp: %s\n", version, commit, buildTimestamp)
 }
