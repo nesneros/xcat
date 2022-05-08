@@ -83,12 +83,22 @@ func TestDetectBzip2(t *testing.T) {
 func TestPlain(t *testing.T) {
 	assert := assert.New(t)
 	rd := strings.NewReader("abc")
-	xcatRd, _ := NewReader(rd, 100)
-	out, e := io.ReadAll(xcatRd)
-	assert.NoError(e)
+	xcatRd, err := NewReader(rd, 100)
+	assert.NoError(err)
+	out, err := io.ReadAll(xcatRd)
+	assert.NoError(err)
 	assert.Equal("abc", string(out))
 }
 
+func TestEmpty(t *testing.T) {
+	assert := assert.New(t)
+	rd := strings.NewReader("")
+	xcatRd, err := NewReader(rd, 100)
+	assert.NoError(err)
+	out, err := io.ReadAll(xcatRd)
+	assert.NoError(err)
+	assert.Equal("", string(out))
+}
 func TestGzip(t *testing.T) {
 	testGzip(t, "abc")
 	testGzip(t, "\n")
@@ -98,17 +108,19 @@ func TestGzip(t *testing.T) {
 func testGzip(t *testing.T, s string) {
 	assert := assert.New(t)
 	rd := bytes.NewReader(gzipToBytes(s))
-	xcatRd, _ := NewReader(rd, 100)
-	out, e := io.ReadAll(xcatRd)
-	assert.NoError(e)
+	xcatRd, err := NewReader(rd, 100)
+	assert.NoError(err)
+	out, err := io.ReadAll(xcatRd)
+	assert.NoError(err)
 	assert.Equal(s, string(out))
 }
 
 func TestBzip2(t *testing.T) {
 	assert := assert.New(t)
 	rd := strings.NewReader(bzHelloWorld)
-	xcatRd, _ := NewReader(rd, 100)
-	out, e := io.ReadAll(xcatRd)
-	assert.NoError(e)
+	xcatRd, err := NewReader(rd, 100)
+	assert.NoError(err)
+	out, err := io.ReadAll(xcatRd)
+	assert.NoError(err)
 	assert.Equal("Hello World\n", string(out))
 }

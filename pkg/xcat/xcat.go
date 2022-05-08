@@ -50,7 +50,7 @@ func NewReader(in io.Reader, bufSize int) (*Reader, error) {
 	}
 	buf := make([]byte, bufSize)
 	n, err := io.ReadFull(in, buf)
-	if err == io.ErrUnexpectedEOF {
+	if err == io.EOF || err == io.ErrUnexpectedEOF {
 		err = nil
 		buf = buf[:n]
 	}
