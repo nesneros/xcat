@@ -40,7 +40,7 @@ func run(args []string, w io.Writer, in io.Reader) error {
 	flags := flag.NewFlagSet(args[0], flag.ContinueOnError)
 	var printKind, showLicense, showHelp bool
 	flags.BoolVarP(&printKind, "kind", "k", false, "Print the detected kind")
-	flags.BoolVarP(&showLicense, "license", "L", false, "Show license and exit without reading stdin")
+	flags.BoolVar(&showLicense, "license", false, "Show license and exit without reading stdin")
 	flags.BoolVarP(&showHelp, "help", "h", false, "Show help and exit without reading stdin")
 	if err := flags.Parse(args[1:]); err != nil {
 		return err

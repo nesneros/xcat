@@ -11,7 +11,7 @@ import (
 func TestLicense(t *testing.T) {
 	assert := assert.New(t)
 	var out bytes.Buffer
-	err := bufferAndRun([]string{"test", "-L"}, &out, &bytes.Buffer{})
+	err := bufferAndRun([]string{"test", "--license"}, &out, &bytes.Buffer{})
 	assert.NoError(err)
 	output := string(out.Bytes())
 	assert.Equal(license, output)
