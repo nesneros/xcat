@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"compress/bzip2"
 	"compress/gzip"
+	"errors"
 	"fmt"
 	"io"
 )
@@ -34,10 +35,9 @@ func init() {
 }
 
 type Reader struct {
-	buf      []byte
-	in       io.Reader
-	mappedRd io.Reader
-	kind     kind
+	buf  []byte
+	rd   io.Reader
+	kind kind
 }
 
 // Create a new xcat.Reader. If bufSize <= 0 the default buffer size is used
@@ -50,7 +50,7 @@ func NewReader(in io.Reader, bufSize int) (*Reader, error) {
 	}
 	buf := make([]byte, bufSize)
 	n, err := io.ReadFull(in, buf)
-	if err == io.EOF || err == io.ErrUnexpectedEOF {
+	if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) {
 		err = nil
 		buf = buf[:n]
 	}
@@ -59,21 +59,21 @@ func NewReader(in io.Reader, bufSize int) (*Reader, error) {
 	}
 	kind := detectKind(buf)
 	allIn := io.MultiReader(bytes.NewReader(buf), in)
-	var output io.Reader
+	var rd io.Reader
 	switch kind {
 	case kindPlain:
-		output = allIn
+		rd = allIn
 	case kindGzip:
-		output, err = gzip.NewReader(allIn)
+		rd, err = gzip.NewReader(allIn)
 	case kindBzip2:
-		output = bzip2.NewReader(allIn)
+		rd = bzip2.NewReader(allIn)
 	default:
 		panic(fmt.Sprintf("INTERNAL ERROR: Invalid kind: %v", kind))
 	}
 	if err != nil {
 		return nil, err
 	}
-	return &Reader{in: in, buf: buf, mappedRd: output, kind: kind}, nil
+	return &Reader{buf: buf, rd: rd, kind: kind}, nil
 }
 
 // Return the detected Kind for the wrapped io.Reader
@@ -82,7 +82,7 @@ func (x *Reader) Kind() kind {
 }
 
 func (x *Reader) Read(p []byte) (n int, err error) {
-	return x.mappedRd.Read(p)
+	return x.rd.Read(p)
 }
 
 func detectKind(buf []byte) kind {
